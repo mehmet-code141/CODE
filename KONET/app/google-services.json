@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "78624051841",
+    "project_id": "konet-5024e",
+    "storage_bucket": "konet-5024e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:78624051841:android:49c8227504e9fff500b380",
+        "android_client_info": {
+          "package_name": "com.example.konet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDO_chXDzh3ljwZ_hfUU5OabNk6deMVdgE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
