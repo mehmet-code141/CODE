@@ -38,6 +38,11 @@ class selectActivity : AppCompatActivity() {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
         }
+        binding.EyeTracking.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java)
+            intent.putExtra("eyeTracking", true)
+            startActivity(intent)
+        }
     }
 
 }

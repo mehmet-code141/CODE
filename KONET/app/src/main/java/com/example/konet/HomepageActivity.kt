@@ -14,9 +14,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.konet.databinding.ActivityHomepageBinding
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,15 +30,12 @@ import java.util.*
 
 class HomePageActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
-    private lateinit var auth : FirebaseAuth
-
-
+    private lateinit var auth: FirebaseAuth
     private lateinit var binding: ActivityHomepageBinding
     private lateinit var tts: TextToSpeech
 
     private val mesajlar = mutableListOf<Mesaj>()
     private lateinit var mesajAdapter: MesajAdapter
-
 
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var speechIntent: Intent
@@ -55,11 +52,10 @@ class HomePageActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         tts = TextToSpeech(this, this)
 
-        mesajAdapter = MesajAdapter(mesajlar,tts)
+        mesajAdapter = MesajAdapter(mesajlar, tts)
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = mesajAdapter
 
-        // --- Mikrofon İzni Kontrolü ve SpeechRecognizer Kurulumu ---
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), RECORD_AUDIO_REQUEST_CODE)
         } else {
@@ -128,19 +124,31 @@ class HomePageActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    fun cikis (view: View){
+    fun cikis(view: View) {
         auth.signOut()
-        val intent=Intent(this, selectActivity::class.java)
+        val intent = Intent(this, selectActivity::class.java)
         startActivity(intent)
     }
 
+    // Doğrudan soruya insani ve alakalı tek cevap verir
     private fun geminiRestIleGonder(girdi: String) {
         CoroutineScope(Dispatchers.IO).launch {
             val url =
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiAnahtari"
 
+            // Kullanıcının sorusuna DOĞRUDAN ve insani tek bir cevap için prompt
+            val prompt = """
+Kullanıcı şunu sordu: "$girdi"
+Lütfen bu soruya, bir insan gibi, doğal ve samimi bir sohbet diliyle ve DOĞRUDAN bu soruya uygun, anlamlı ve mantıklı tek bir cevap ver.
+Bu soruya verilebilecek Her cevap farklı bir insanın bakış açısından, biri olumlu biri olumsuz ruh haliyle yazılmış olsun. Cevaplar birbirini desteklemesin.
+Cevabın, kullanıcının sorduğu soruya gerçekten karşılık versin.
+Cevapları sadece aşağıdaki formatta sırala:
+" "(ilk cevap)
+" "(ikinci cevap)
+""".trimIndent()
+
             val icerikNesne = JSONObject()
-            icerikNesne.put("parts", JSONArray().put(JSONObject().put("text", girdi)))
+            icerikNesne.put("parts", JSONArray().put(JSONObject().put("text", prompt)))
             val anaNesne = JSONObject()
             anaNesne.put("contents", JSONArray().put(icerikNesne))
 
@@ -175,10 +183,12 @@ class HomePageActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                                 val obj = JSONObject(yanitGovde)
                                 val candidates = obj.optJSONArray("candidates")
                                 if (candidates != null && candidates.length() > 0) {
-                                    val content = candidates.getJSONObject(0).optJSONObject("content")
-                                    val parts = content?.optJSONArray("parts")
-                                    val yanit = parts?.optJSONObject(0)?.optString("text") ?: "Yanıt alınamadı."
-                                    mesajlar.add(Mesaj(yanit, false))
+                                    val cevap = candidates.getJSONObject(0)
+                                        .optJSONObject("content")
+                                        ?.optJSONArray("parts")
+                                        ?.optJSONObject(0)
+                                        ?.optString("text") ?: ""
+                                    mesajlar.add(Mesaj(cevap.trim(), false))
                                 } else {
                                     mesajlar.add(Mesaj("API beklenmedik yanıt döndü.", false))
                                 }
@@ -190,11 +200,6 @@ class HomePageActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         }
                         mesajAdapter.notifyDataSetChanged()
                         binding.recyclerView.scrollToPosition(mesajlar.size - 1)
-
-                  //      val sonMesaj = mesajlar.lastOrNull()
-                  //      if (sonMesaj != null && !sonMesaj.kullaniciGonderdi && sonMesaj.icerik.isNotBlank()) {
-                  //          tts.speak(sonMesaj.icerik, TextToSpeech.QUEUE_FLUSH, null, null)
-                  //      }
                     }
                 }
             })
